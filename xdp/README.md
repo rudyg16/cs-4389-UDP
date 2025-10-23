@@ -82,3 +82,14 @@ sudo bpftool map dump name pkt_cnt_by_sadd
 ```
 They `key` is your IP address in 32-bit integer. You can convert it to dotted notation to verify it came from the second VM.<br/>
 There will be 2 IP addresses: one is the gateway, one is the VM.
+<br/>
+
+When you are done with testing, run the command to unlink XDP from the NIC:
+```sh
+make unlink
+```
+
+Additionally, you can run this command to clean up:
+```sh
+make clean
+```
