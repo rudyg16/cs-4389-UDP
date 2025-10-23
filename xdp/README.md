@@ -50,7 +50,8 @@ Run this command to check:
 ```sh
 ip addr
 ```
-Your network interface should be the second interface. The one that does not have `127.0.0.1` as its IP address.
+Your network interface should be the second interface. The one that does not have `127.0.0.1` as its IP address.<br/>
+Then edit the Makefile and change the NET_INTERFACE to your network interface.<br/>
 
 To the run the program first run:
 ```sh
