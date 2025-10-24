@@ -10,4 +10,4 @@ unlink:
 	sudo ip link set dev $(NET_INTERFACE) xdp off
 
 clean:
-	rm -f test.o
+	rm -f xdp_packet_tracer.o
