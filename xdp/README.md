@@ -1,19 +1,49 @@
+# Prerequisites
+VM Victim Hardware Minimum:
+- Ubuntu 24.04.3
+- Processor: 2
+- Memory: 4 GB
+- Hard Disk: 20 GB
+- Network Adapter: NAT
+
+VM Attacker Hardware Minimum:
+- Ubuntu 24.04.3
+- Processor: 2
+- Memory: 4 GB
+- Hard Disk: 20 GB
+- Network Adapter: NAT
+
 # Instructions
 Install python3.<br/>
 ```sh
 sudo apt instal python3-pip
 ```
 
-Install clang, llvm, libbpf and make
+Install clang, llvm, libbpf and make.
 ```sh
 sudo apt-get install clang llvm libbpf-dev make -y
 ```
 
-Install bpftool
+Install git.
+```sh
+sudo apt install git
+```
+
+Install openssl.
+```sh
+sudo apt-get install libssl-dev
+```
+
+Install gcc-multilib.
+```sh
+sudo apt-get install gcc-multilib
+```
+
+Install bpftool. (Recommend installing this in home directory)
 ```sh
 git clone --recurse-submodules https://github.com/libbpf/bpftool.git
 ```
-Then
+Then, cd into bpftool and run:
 ```sh
 git submodule update --init
 ```
@@ -25,11 +55,13 @@ make
 Then install bpftool:
 ```sh
 cd src
-make install
+sudo make install
 ```
+Note: only run `cd src` if that is not the current working directory.
+
 <br/>
 <br/>
-If you try to run bpftool but it says there is no bpftool for version 6.14 then do the following steps, otherwise try to run bpftool first<br/>
+NOTE: If you try to run bpftool but it says there is no bpftool for version 6.14 then do the following steps, otherwise try to run bpftool first<br/>
 Then move bpftool to a directory in your PATH:
 
 ```sh
@@ -51,7 +83,7 @@ Run this command to check:
 ip addr
 ```
 Your network interface should be the second interface. The one that does not have `127.0.0.1` as its IP address.<br/>
-Then edit the Makefile and change the NET_INTERFACE to your network interface.<br/>
+Then edit the Makefile and change the `NET_INTERFACE` to your network interface.<br/>
 
 To the run the program first run:
 ```sh
@@ -62,7 +94,7 @@ then run:
 ```sh
 make link
 ```
-This links the XDP to the network interface.
+This attaches the XDP to the network interface.
 <br/>
 
 Run this command to check your current UDP traffic:
