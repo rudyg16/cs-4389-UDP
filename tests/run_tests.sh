@@ -2,14 +2,17 @@
 # tests/run_tests.sh
 # Orchestrates the test environment and runs the smaller checks.
 set -euo pipefail
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 TESTDIR="/tmp/test_results"
-NETSETUP="$REPO_ROOT/net_setup.py"
-COOKIE_ISSUER="$REPO_ROOT/cookie_issuer.py"
-REFLECTOR="$REPO_ROOT/reflector_server.py"
-LEGIT_SENDER="$REPO_ROOT/legit_sender.py"
-CAPTURE="$REPO_ROOT/capture_and_measure.py"
-PKT_C="$REPO_ROOT/pkt_tracker.c"
+
+
+NETSETUP="$REPO_ROOT/udp-shield-testbed/net_setup.py"
+COOKIE_ISSUER="$REPO_ROOT/cookie-handshake/cookie_issuer.py"
+REFLECTOR="$REPO_ROOT/udp-shield-testbed/reflector_server.py"
+LEGIT_SENDER="$REPO_ROOT/udp-shield-testbed/legit_sender.py"
+CAPTURE="$REPO_ROOT/udp-shield-testbed/capture_and_measure.py"
+PKT_C="$REPO_ROOT/xdp/xdp_packet_tracer.c"
+
 
 NS_ATTACKER="ns_attacker"
 NS_VICTIM="ns_victim"
@@ -94,7 +97,7 @@ echo "[+] check_bpfs passed."
 
 # Run integration scenario (longer, creates pcap)
 echo "[*] Running integration scenario (this takes ~10s)..."
-ip netns exec $NS_VICTIM python3 "$REPO_ROOT/tests/integration_scenario.sh" \
+ip netns exec $NS_VICTIM bash "$REPO_ROOT/tests/integration_scenario.sh" \
   --duration 8 --out "$TESTDIR/integration.pcap" \
   > "$TESTDIR/integration.out" 2>&1 || {
     echo "[!] integration scenario failed, see $TESTDIR/integration.out"

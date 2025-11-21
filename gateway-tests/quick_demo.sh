@@ -16,7 +16,7 @@ cleanup() {
     echo "[*] Cleaning up..."
     [ ! -z "$GATEWAY_PID" ] && kill $GATEWAY_PID 2>/dev/null || true
     [ ! -z "$BACKEND_PID" ] && kill $BACKEND_PID 2>/dev/null || true
-    rm -f /tmp/demo_recv.log
+    #rm -f /tmp/demo_recv.log
     echo "[+] Done"
 }
 

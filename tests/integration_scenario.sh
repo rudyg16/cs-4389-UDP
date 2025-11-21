@@ -31,10 +31,11 @@ NS_ATTACKER="ns_attacker"
 NS_VICTIM="ns_victim"
 NS_REFLECTOR="ns_reflector"
 
-REFLECTOR="$REPO_ROOT/reflector_server.py"
-COOKIE_ISSUER="$REPO_ROOT/cookie_issuer.py"
-SEND_WITH_COOKIE="$REPO_ROOT/send_with_cookie.py"
-CAPTURE="$REPO_ROOT/capture_and_measure.py"
+REFLECTOR="$REPO_ROOT/udp-shield-testbed/reflector_server.py"
+COOKIE_ISSUER="$REPO_ROOT/cookie-handshake/cookie_issuer.py"
+SEND_WITH_COOKIE="$REPO_ROOT/cookie-handshake/send_with_cookie.py"
+CAPTURE="$REPO_ROOT/udp-shield-testbed/capture_and_measure.py"
+
 
 # start capture inside victim namespace
 echo "[*] Starting tcpdump capture inside $NS_VICTIM (duration ${DURATION}s) -> $OUT"

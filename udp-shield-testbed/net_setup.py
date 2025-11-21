@@ -56,6 +56,9 @@ def main():
     run("ip -n ns_victim link set vic_r up")
     run("ip -n ns_reflector link set v_vic up")
 
+    # Add route in attacker namespace to reach reflector network via victim
+    run("ip -n ns_attacker route add 10.200.2.0/24 via 10.200.1.2")
+
     # Enable IP forwarding in victim namespace (optional)
     run("ip netns exec ns_victim sysctl -w net.ipv4.ip_forward=1")
 

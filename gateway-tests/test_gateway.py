@@ -22,34 +22,36 @@ def test_cookie_request(host='127.0.0.1', port=40000):
         
         if not data.startswith(b"COOKIE:"):
             print(f"  [FAIL] Unexpected response: {data}")
-            return None
+            sock.close()
+            return None, None
         
         cookie = data[7:]  # Skip "COOKIE:" prefix
         
         if len(cookie) != 16:
             print(f"  [FAIL] Invalid cookie length: {len(cookie)}")
-            return None
+            sock.close()
+            return None, None
         
         print(f"  [PASS] Received 16-byte cookie: {cookie.hex()}")
-        return cookie
+        # IMPORTANT: do NOT close sock here – we reuse it in Test 2
+        return sock, cookie
         
     except socket.timeout:
         print("  [FAIL] Timeout - is gateway running?")
-        return None
-    finally:
         sock.close()
+        return None, None
 
 
-def test_valid_packet(cookie, host='127.0.0.1', port=9999):
+
+def test_valid_packet(sock, cookie, host='127.0.0.1', port=9999):
     """Test 2: Send valid packet with cookie"""
     print("\n[TEST 2] Sending packet with valid cookie...")
-    
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    
+
     try:
         payload = b"TEST_PAYLOAD_VALID"
         packet = cookie + payload
         sock.sendto(packet, (host, port))
+
         print(f"  [PASS] Sent packet with cookie ({len(payload)} bytes payload)")
         return True
     except Exception as e:
@@ -132,7 +134,7 @@ def run_tests():
     total = 5
     
     # Test 1: Get cookie
-    cookie = test_cookie_request()
+    sock, cookie = test_cookie_request()
     if cookie:
         passed += 1
     else:
@@ -140,7 +142,7 @@ def run_tests():
         return 1
     
     # Test 2: Send valid packet
-    if test_valid_packet(cookie):
+    if test_valid_packet(sock, cookie):
         passed += 1
     
     # Test 3: Verify backend received it
