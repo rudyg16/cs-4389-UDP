@@ -33,7 +33,7 @@ def compile_bpf(c_file, out_o):
     if not clang:
         print("ERROR: clang not found in PATH")
         sys.exit(10)
-    cc_cmd = [clang, "-O2", "-target", "bpf", "-c", c_file, "-o", out_o]
+    cc_cmd = [clang, "-O2", "-g", "-target", "bpf", "-c", c_file, "-o", out_o]
     run(cc_cmd)
 
 def attach_xdp(iface, obj):
@@ -87,8 +87,8 @@ def main():
 
     # Prefer map name lookup; fallback to parsing ids
     # Common map names in your C: pkt_cnt_by_saddr, pkt_cnt_by_dport
-    saddr_mapid = find_mapid_by_name("pkt_cnt_by_saddr")
-    dport_mapid = find_mapid_by_name("pkt_cnt_by_dport")
+    saddr_mapid = find_mapid_by_name("pkt_cnt_by_sadd")
+    dport_mapid = find_mapid_by_name("pkt_cnt_by_dpor")
     if not saddr_mapid and not dport_mapid:
         print("WARNING: Could not find expected map names via bpftool. Dumping maps for inspection.")
         print(maps_out)

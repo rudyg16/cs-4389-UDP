@@ -26,7 +26,7 @@ if not data.startswith(b"COOKIE:"):
 cookie = data[len(b"COOKIE:"):]
 print("Received cookie:", cookie.hex())
 
-t = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-t.sendto(cookie + args.payload.encode(), (args.target, args.target_port))
+#t = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+g.sendto(cookie + args.payload.encode(), (args.target, args.target_port))
 print(f"Sent protected packet to {args.target}:{args.target_port}")
-
+g.close()
