@@ -16,7 +16,7 @@ VM Attacker Hardware Minimum:
 # Instructions
 Install python3.<br/>
 ```sh
-sudo apt instal python3-pip
+sudo apt install python3-pip
 ```
 
 Install clang, llvm, libbpf and make.

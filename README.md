@@ -1,162 +1,130 @@
-# UDP SHIELD — TESTING & VALIDATION GUIDE (WSL)
+# UDP Shield — Master Runbook
 
-## Overview
-This guide provides complete instructions for installing dependencies, running tests, and validating the UDP Shield project inside **WSL (Ubuntu)**.
+Single-source instructions to install dependencies, bring up the full stack, run gateway/XDP/end-to-end tests, and replay experiments. All commands assume Ubuntu/WSL with root available for namespace/XDP steps.
 
----
+## 1) Prerequisites
+- Ubuntu 22.04+ (WSL2 recommended)
+- Root/sudo for namespaces, tcpdump, XDP attach
+- Git to clone this repo
+- Required packages (incorporating the XDP README install tutorial): `python3` `python3-pip` `gcc` `make` `clang` `llvm` `bpftool` `net-tools` `iproute2` `tcpdump` `libbpf-dev` `libssl-dev` `gcc-multilib`
+- Python deps: `pip install scapy`
+- Optional: `socat` (nicer UDP listener)
 
-# 1. SYSTEM REQUIREMENTS
-
-## 1.1 WSL Version
-- WSL2 recommended  
-- Ubuntu 22.04 or newer  
-
-## 1.2 Required Tools
-- Python 3.10+  
-- pip  
-- net-tools  
-- clang / llvm  
-- build-essential  
-- tcpdump  
-- bpftool  
-- scapy (Python library)
-
----
-
-# 2. INSTALLATION STEPS
-
-## 2.1 Update System
+Clone the repo:
 ```bash
-sudo apt update && sudo apt upgrade -y
-```
-
-## 2.2 Install Required Packages
-```bash
-sudo apt install -y python3 python3-pip tcpdump clang llvm make gcc bpftool net-tools
-```
-
-## 2.3 Install Python Dependencies
-```bash
-pip install scapy
-```
-
----
-
-# 3. REPOSITORY SETUP
-
-## 3.1 Clone or Copy the Project
-If cloning:
-```bash
-git clone <repo-url>
+git clone https://github.com/rudyg16/cs-4389-UDP.git
 cd cs-4389-UDP
 ```
 
-If copied into Downloads/etc:
+Install essentials:
 ```bash
-cd ~/Downloads/code/cs-4389-UDP
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3 python3-pip gcc make clang llvm bpftool tcpdump iproute2 net-tools libbpf-dev libssl-dev gcc-multilib socat
+sudo pip3 install scapy
 ```
 
----
-
-# 4. BASIC FUNCTIONALITY TESTING
-
-## 4.1 Run Gateway Quick Demo
-```bash
-bash gateway-tests/quick_demo.sh
-```
-
-This verifies:
-- Cookie issuance  
-- Gateway forwarding  
-- Protected packet handling  
-
----
-
-# 5. INTEGRATION TEST SUITE
-
-The main test runner configures namespaces, starts services, runs BPF tests, and performs a full simulation.
-
-## 5.1 Run Full Test Suite
-```bash
-sudo bash tests/run_tests.sh
-```
-
-This executes:
-- Namespace setup  
-- Cookie issuer test (`check_cookie.py`)  
-- BPF/XDP compile + attach test (`check_bpfs.py`)  
-- Full integration scenario (`integration_scenario.sh`)
-
----
-
-# 6. VIEWING TEST OUTPUTS
-
-## 6.1 List Test Results Directory
-```bash
-ls /tmp/test_results
-```
-
-## 6.2 View Logs Individually
-
-### Cookie Test Output
-```bash
-sudo cat /tmp/test_results/check_cookie.out
-```
-
-### BPF/XDP Test Output
-```bash
-sudo cat /tmp/test_results/check_bpf.out
-```
-
-### Integration Scenario Output
-```bash
-sudo cat /tmp/test_results/integration.out
-```
-
-### Packet Capture (PCAP)
-```bash
-sudo tcpdump -r /tmp/test_results/integration.pcap
-```
-
----
-
-# 7. COMMON FIXES
-
-## 7.1 Missing tcpdump
-```bash
-sudo apt install tcpdump
-```
-
-## 7.2 Missing kernel headers (BPF compilation errors)
+If `bpftool` is missing or kernel headers are unavailable, either build from bundled `bpftool/` (see `xdp/README.md` for the manual steps) or install headers:
 ```bash
 sudo apt install linux-headers-$(uname -r)
 ```
 
-## 7.3 Missing scapy
+## 2) Repo layout
+- Gateway: `gateway-modules/` (simple gateway + backend), `cookie-handshake/` (issuer/client)
+- XDP fast path: `xdp/xdp_packet_tracer.c` (+ `xdp/Makefile`)
+- Namespace testbed + traffic/attacks: `udp-shield-testbed/` and `udp-shield-testbed/experiments/`
+- Automated runs: `gateway-tests/`, `tests/` (rooted full suite), `integrated-demo/`
+- Docs artifacts land in `/tmp/test_results` or a chosen log dir
+
+For deeper, task-specific instructions:
+- Detailed XDP build/attach guidance: `xdp/README.md` (includes bpftool build steps and interface selection)
+- Standalone testbed quick start: `udp-shield-testbed/docs/quick_start.md`
+- Experiment scenarios and usage: `udp-shield-testbed/experiments/README.md`
+- Integrated demo overview: `integrated-demo/README.md`
+
+## 3) Quick health checks (no root)
+1) Gateway quick demo:
 ```bash
-pip install scapy
+bash gateway-tests/quick_demo.sh
+```
+Shows cookie issuance, gateway forwarding, backend receive.
+
+2) Gateway test suite:
+```bash
+bash gateway-tests/run_gateway_test.sh
+```
+Runs integration tests in-process; logs go to `/tmp`.
+
+## 4) Full-stack test harness (root)
+Runs namespaces, cookie issuer, reflector, BPF compile/attach, and integration capture.
+```bash
+sudo bash tests/run_tests.sh
+```
+Artifacts: `/tmp/test_results/{check_cookie.out,check_bpf.out,integration.out,integration.pcap,recv.log,...}` plus service logs.
+
+## 5) Integrated one-button demo
+Chains gateway demos and (when root) the full stack. Optional arg sets log dir.
+```bash
+# without root: gateway-only parts
+bash integrated-demo/full_demo.sh /tmp/udp_shield_demo
+
+# with root: includes namespace+XDP suite
+sudo bash integrated-demo/full_demo.sh /tmp/udp_shield_demo
+```
+Key logs: `gateway_quick_demo.log`, `gateway_tests.log`, optional `full_stack_tests.log`; see `/tmp/test_results` for pcaps/logs from the full suite.
+
+## 6) Manual namespace testbed workflow (root)
+Bring up topology, run services, send traffic, capture, and tear down.
+```bash
+sudo python3 udp-shield-testbed/net_setup.py            # create ns_attacker/ns_victim/ns_reflector
+
+# Start reflector (ns_reflector)
+sudo ip netns exec ns_reflector python3 udp-shield-testbed/reflector_server.py --port 12345 --max-responses-per-sec 200 &
+
+# Start cookie issuer (ns_victim)
+sudo ip netns exec ns_victim python3 cookie-handshake/cookie_issuer.py --bind 10.200.1.2 --port 40000 --verbose &
+
+# Optional listener on protected port (ns_victim)
+sudo ip netns exec ns_victim socat -u UDP-RECV:9999 SYSTEM:'tee -a /tmp/test_results/recv.log' &
+
+# Legit cookie-protected packet from attacker
+sudo ip netns exec ns_attacker python3 cookie-handshake/send_with_cookie.py --gateway 10.200.1.2 --gateway-port 40000 --target 10.200.1.2 --target-port 9999 --payload HELLO
+
+# Capture + summarize
+sudo ip netns exec ns_victim python3 udp-shield-testbed/capture_and_measure.py --iface v_att --duration 10 --out /tmp/test_results/manual_capture.pcap
 ```
 
----
-
-# 8. CLEANUP AFTER TESTING
-
-Delete namespaces:
+Cleanup:
 ```bash
-sudo ip netns delete ns_attacker
-sudo ip netns delete ns_victim
-sudo ip netns delete ns_reflector
+sudo ip netns delete ns_attacker ns_victim ns_reflector || true
+sudo pkill -f 'cookie_issuer.py|reflector_server.py|tcpdump|socat' || true
 ```
 
-Stop background processes:
+## 7) XDP fast-path only (manual)
+Adjust `NET_INTERFACE` in `xdp/Makefile` to your NIC, then:
 ```bash
-sudo pkill -f cookie_issuer.py
-sudo pkill -f reflector_server.py
-sudo pkill -f tcpdump
-sudo pkill -f socat
+cd xdp
+make build
+sudo make link            # attach XDP
+# send UDP traffic toward the host (port 9999 protected, 40000 cookie)
+sudo bpftool map dump name pkt_cnt_by_saddr
+sudo bpftool map dump name pkt_cnt_by_dport
+sudo make unlink          # detach when done
 ```
+Note: fast-path cookie precheck expects `valid_cookies` map populated by a user-space agent (not yet wired here).
 
----
+## 8) Experiment scripts (on top of testbed, root)
+Assumes namespaces up and cookie issuer running on 10.200.1.2:40000.
+```bash
+# Legit single packet
+sudo bash udp-shield-testbed/experiments/legit_cookie_baseline.sh 10.200.1.2 9999 "PAYLOAD"
 
-# 9. CONTACT & SUPPORT
-For questions, debugging help, or validation checks, refer to the course project instructions or contact your project teammate(s).
+# Spoofed flood (raw packets)
+sudo bash udp-shield-testbed/experiments/spoofed_flood.sh 10.200.1.2 54321 20000 6
+
+# Reflector burst
+sudo bash udp-shield-testbed/experiments/reflector_burst.sh 10.200.2.2 12345 200 0.01
+
+# Mixed sequence (baseline + flood + reflector)
+sudo bash udp-shield-testbed/experiments/mixed_attack_demo.sh
+```
+Inspect effects via `/tmp/test_results/` logs or captures.
